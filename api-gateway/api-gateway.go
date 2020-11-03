@@ -1,83 +1,103 @@
 package main
 
-//web server derived from https://golang.org/doc/articles/wiki/
-
 import (
 	"fmt"
-	"io/ioutil"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
-	"sync"
-	"time"
+	"sort"
+
+	"github.com/gorilla/sessions"
+
+	"github.com/gorilla/pat"
+	"github.com/markbates/goth"
+	"github.com/markbates/goth/gothic"
+	"github.com/markbates/goth/providers/google"
 )
 
-var meshServiceUrl string
-var listenPort string
-
-func handler(w http.ResponseWriter, r *http.Request) {
-	//poll response from back-end service
-	client := http.Client{
-		Timeout: 2 * time.Second,
-	}
-	resp, err := client.Get(meshServiceUrl)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Fprintf(w, "Hi there, your random number is %s!", body)
-	log.Printf("Request: %s client: %s forwarded for: %s", r.URL.Path, r.RemoteAddr, r.Header.Get("X-FORWARDED-FOR"))
-}
-
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Server", "Go Health status server")
-	w.WriteHeader(200)
-}
-
 func main() {
-	//define environment variable
-	http.HandleFunc("/", handler)
-	meshServiceUrl = os.Getenv("JB_MESH_SERVICE")
+	key := "ga4jgwgrlgj3ijtg" // Replace with your SESSION_SECRET or similar
+	maxAge := 86400 * 1       // 1 day
+	isProd := false           // Set to true when serving over https
 
-	if meshServiceUrl == "" {
-		meshServiceUrl = "http://localhost:8081/api"
+	store := sessions.NewCookieStore([]byte(key))
+	store.MaxAge(maxAge)
+	store.Options.Path = "/"
+	store.Options.HttpOnly = true // HttpOnly should always be enabled
+	store.Options.Secure = isProd
+	log.Printf("Google key: %s Google Secret %s", os.Getenv("GOOGLE_KEY"), os.Getenv("GOOGLE_SECRET"))
+	gothic.Store = store
+	goth.UseProviders(
+		google.New(os.Getenv("GOOGLE_KEY"), os.Getenv("GOOGLE_SECRET"), "http://localhost:3000/auth/google/callback"))
+
+	m := make(map[string]string)
+	m["google"] = "Google"
+
+	var keys []string
+	for k := range m {
+		keys = append(keys, k)
 	}
+	sort.Strings(keys)
 
-	wg := new(sync.WaitGroup)
+	providerIndex := &ProviderIndex{Providers: keys, ProvidersMap: m}
 
-	wg.Add(2)
+	p := pat.New()
+	p.Get("/auth/{provider}/callback", func(res http.ResponseWriter, req *http.Request) {
 
-	healthServer := http.NewServeMux()
-	healthServer.HandleFunc("/health", healthHandler)
-
-	apiserver := http.NewServeMux()
-	apiserver.HandleFunc("/", handler)
-
-	listenPort = os.Getenv("JB_MESH_SERVER_PORT")
-	if listenPort == "" {
-		listenPort = ":8080"
-	}
-
-	go func() {
-		server2 := http.Server{
-			Addr:    listenPort,
-			Handler: apiserver,
+		user, err := gothic.CompleteUserAuth(res, req)
+		if err != nil {
+			fmt.Fprintln(res, err)
+			return
 		}
-		log.Fatal(server2.ListenAndServe())
-		wg.Done()
-	}()
+		t, _ := template.New("foo").Parse(userTemplate)
+		t.Execute(res, user)
+	})
 
-	go func() {
-		server1 := http.Server{
-			Addr:    ":8079", // :{port}
-			Handler: healthServer,
+	p.Get("/logout/{provider}", func(res http.ResponseWriter, req *http.Request) {
+		gothic.Logout(res, req)
+		res.Header().Set("Location", "/")
+		res.WriteHeader(http.StatusTemporaryRedirect)
+	})
+
+	p.Get("/auth/{provider}", func(res http.ResponseWriter, req *http.Request) {
+		// try to get the user without re-authenticating
+		if gothUser, err := gothic.CompleteUserAuth(res, req); err == nil {
+			t, _ := template.New("foo").Parse(userTemplate)
+			t.Execute(res, gothUser)
+		} else {
+			gothic.BeginAuthHandler(res, req)
 		}
-		server1.ListenAndServe()
-		wg.Done()
-	}()
-	wg.Wait()
+	})
+
+	p.Get("/", func(res http.ResponseWriter, req *http.Request) {
+		t, _ := template.New("foo").Parse(indexTemplate)
+		t.Execute(res, providerIndex)
+	})
+
+	log.Println("listening on localhost:3000")
+	log.Fatal(http.ListenAndServe(":3000", p))
 }
+
+type ProviderIndex struct {
+	Providers    []string
+	ProvidersMap map[string]string
+}
+
+var indexTemplate = `{{range $key,$value:=.Providers}}
+    <p><a href="/auth/{{$value}}">Log in with {{index $.ProvidersMap $value}}</a></p>
+{{end}}`
+
+var userTemplate = `
+<p><a href="/logout/{{.Provider}}">logout</a></p>
+<p>Name: {{.Name}} [{{.LastName}}, {{.FirstName}}]</p>
+<p>Email: {{.Email}}</p>
+<p>NickName: {{.NickName}}</p>
+<p>Location: {{.Location}}</p>
+<p>AvatarURL: {{.AvatarURL}} <img src="{{.AvatarURL}}"></p>
+<p>Description: {{.Description}}</p>
+<p>UserID: {{.UserID}}</p>
+<p>AccessToken: {{.AccessToken}}</p>
+<p>ExpiresAt: {{.ExpiresAt}}</p>
+<p>RefreshToken: {{.RefreshToken}}</p>
+`
