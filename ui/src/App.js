@@ -1,34 +1,21 @@
-import logo from './logo.svg';
 import menuIcon from './img/menu.svg';
-import menuIconPressed from './img/menu-press.svg';
-import notifyIcon from './img/notifications.svg';
-import notifyIconPressed from './img/notifications-press.svg';
+import {slide as Menu} from 'react-burger-menu';
 import './App.css';
 
 function App() {
   return (
     <div className="App">
-      <div className="menu-left">
-
-      </div>
+     <Menu width={ '30%' } >
+        <a id="item1" className="menu-item" href="/">Item1</a>
+        <a id="item2" className="menu-item" href="/">Item2</a>
+      </Menu>
       <div className="canvas">
         <header className="App-header">
-          <img src={menuIcon} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
+        <p> 
+          <img src={menuIcon} className="App-logo" alt="logo" /> Sandbox UI sample
+        </p>
         </header>
       </div>
-      <div className="notify-right"></div> 
-      
     </div>
   );
 }
