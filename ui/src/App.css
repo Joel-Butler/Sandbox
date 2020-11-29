@@ -40,6 +40,40 @@ body {
   color: white;
 }
 
+.menu-item{ 
+  color: black;
+  text-decoration: none;
+
+  border-bottom:  black 1px solid;
+  display: block;
+  float:left;
+  width:100%;
+  text-align: left;
+  text-decoration:none;
+}
+
+.bm-item-list ul {
+  float:left; 
+  padding:0;
+  width: 100%;
+  list-style-type: none;
+  margin-left:none;
+}
+
+.menu-item:hover {
+  background-color: rgb(92, 138, 165);
+}
+
+.menu-item-icon {
+  padding: 3px;
+  float: left;
+  height: 50px;
+  width: 50px;
+  padding-right: 10px;
+  border-color:  black;
+
+}
+
 .App-link {
   color: #61dafb;
 }
@@ -104,7 +138,7 @@ Note: Beware of modifying this element as it can break the animations - you shou
 /* General sidebar styles */
 .bm-menu {
   background: #868996;
-  padding: 2.5em 1.5em 0;
+  padding: 2.5em 0 0; 
   font-size: 1.25em;
   overflow-y: hidden !important; 
 }
@@ -117,7 +151,7 @@ Note: Beware of modifying this element as it can break the animations - you shou
 /* Wrapper for item list */
 .bm-item-list {
   color: #b8b7ad;
-  padding: 0.8em;
+  /*padding: 0.8em;*/
 }
 
 /* Individual item */

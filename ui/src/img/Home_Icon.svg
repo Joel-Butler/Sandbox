@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 138 153" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+    <g transform="matrix(1,0,0,1,-36,-209)">
+        <g id="Home-Icon" serif:id="Home Icon" transform="matrix(1,0,0,1,10.5438,-13.4194)">
+            <g transform="matrix(0.563559,0,0,0.64881,41.2364,145.915)">
+                <rect x="16.99" y="236.095" width="156.506" height="111.411" style="fill:none;stroke:black;stroke-width:13.16px;"/>
+            </g>
+            <path d="M94.248,226.811L158.907,298.432L29.59,298.432L94.248,226.811Z" style="fill:none;stroke:black;stroke-width:8px;"/>
+        </g>
+    </g>
+</svg>
